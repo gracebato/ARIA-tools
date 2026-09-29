@@ -263,3 +263,6 @@ tags
 
 # Data GUNW files
 *.nc
+
+# Local NISAR test data
+ICELAND/
