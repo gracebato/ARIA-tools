@@ -273,9 +273,11 @@ class Downloader:
                 'Version support not included for NISAR, remove the critera'
             )
         else:
-            urls = url_versions(urls, self.args.version, self.args.wd)
-        scenes = [scene for scene, url in zip(scenes, urls) if url in urls]
-        ifgs = [ifg for ifg, url in zip(ifgs, urls) if url in urls]
+            keep = set(url_versions(urls, self.args.version, self.args.wd))
+            idx = [i for i, url in enumerate(urls) if url in keep]
+            scenes = [scenes[i] for i in idx]
+            urls = [urls[i] for i in idx]
+            ifgs = [ifgs[i] for i in idx]
 
         # Filter scenes based on date and elapsed time criteria
         scenes, urls, ifgs = self.filter_scenes(
@@ -320,10 +322,13 @@ class Downloader:
         end = self.args.end + datetime.timedelta(days=1)
 
         if self.args.mission.upper() == "S1":
+            # v3 products lack the GUNW_STD processingLevel, so filter
+            # by collection only
             return asf_search.geo_search(
-                collections=["C2859376221-ASF", "C1261881077-ASF"],
-                dataset=asf_search.constants.ARIA_S1_GUNW,
-                processingLevel=asf_search.constants.GUNW_STD,
+                collections=[
+                    "C1595422627-ASF",   # S1 GUNW v2
+                    "C2859376221-ASF",   # S1 GUNW v3
+                ],
                 relativeOrbit=tracks,
                 flightDirection=flight_direction,
                 intersectsWith=bbox_wkt,
@@ -337,6 +342,7 @@ class Downloader:
             opts = asf_search.ASFSearchOptions(
                 collections=[
                     "C2850261892-ASF",   # public NISAR GUNW
+                    "C2854335566-ASF",   # public NISAR GUNW
                     "C4052499921-ASF",   # private ephemeral archive
                 ],
                 dataset=asf_search.constants.NISAR,
